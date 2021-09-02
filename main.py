@@ -5,6 +5,22 @@ from pprint import pprint
 TODAY = datetime.datetime.today()
 
 
+class InputDevise:
+    def __init__(self, input_information, error_message: str):
+        self.information = input_information
+        self.error_message = error_message
+
+    def in_integer(self):
+        if self.information.isdigit():
+            output_information = int(self.information)
+            return output_information
+        elif self.information == 'exit':
+            return False
+        else:
+            print(self.error_message)
+            return False 
+
+
 class ConstantSpending:
     def __init__(self, plan):
         self.spending_plan = plan
@@ -40,6 +56,7 @@ class ConstantSpending:
         self.spending_plan['spending'].append(spend_inf)
         with open('data.json', 'w', encoding='utf-8') as save_file:
             json.dump(self.spending_plan, save_file, indent=4)
+        print(f'Трата категории "{category.strip().capitalize()}" на сумму {format_spend_of_money} рублей добавлена.')
 
     def delete(self):
         print('\nКакую трату вы хотите удалить?\n')
@@ -49,12 +66,25 @@ class ConstantSpending:
             num += 1
             select_spend[num] = item
             print(f"{num} - {item['category']} {item['spend_of_money']} {item['date']}")
-        select_num = int(input('Введите номер: '))
-        remove_element = select_spend[select_num]
+        err_msg = 'Ошибка: Неверный формат.'
+        select_num = InputDevise(input('Введите номер: '), err_msg)
+        select = select_num.in_integer()
+        if not select:
+            return False
+        remove_element = select_spend[select]
         self.spending_plan['spending'].remove(remove_element)
         print('Трата удалена.')
         with open('data.json', 'w', encoding='utf-8') as save_file:
             json.dump(self.spending_plan, save_file, indent=4)
+
+    def delete_all(self):
+        agreement = input('Вы уверены, что хотите удалить все траты? (Y/N)').lower()
+        if agreement == 'y':
+            self.spending_plan['spending'] = []
+            with open('data.json', 'w') as data_del:
+                json.dump(self.spending_plan, data_del, indent=4)
+        else:
+            pass
 
 
 def menu(command):
@@ -64,6 +94,8 @@ def menu(command):
         const.show()
     elif command == 'del':
         const.delete()
+    elif command == 'del_all':
+        const.delete_all()
     else:
         print('Неизвестная команда.')
 
