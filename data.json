@@ -1,5 +1,36 @@
 {
     "current_date": "2021-09-01 11:25:51.502416",
     "next_income_date": "2021-09-01",
-    "spending": []
+    "spending": [
+        {
+            "category": "\u041a\u0432\u0430\u0440\u0442\u043f\u043b\u0430\u0442\u0430 ",
+            "spend_of_money": 1000.0,
+            "date": "2021-09-01"
+        },
+        {
+            "category": "djjkjkjks",
+            "spend_of_money": 1000.0,
+            "date": "2021-09-01"
+        },
+        {
+            "category": "dkllkls",
+            "spend_of_money": 100.0,
+            "date": "2021-02-01"
+        },
+        {
+            "category": "kdsklkklskd",
+            "spend_of_money": 1000.0,
+            "date": "2021-09-01"
+        },
+        {
+            "category": "flklklklksl",
+            "spend_of_money": 12331.02,
+            "date": "2021-09-01"
+        },
+        {
+            "category": "fkdkljkjlkjsl",
+            "spend_of_money": 1000.1,
+            "date": "2021-09-01"
+        }
+    ]
 }

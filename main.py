@@ -14,12 +14,28 @@ class ConstantSpending:
 
     def add_exp(self):
         category = input('Введите категорию: ')
-        spend_of_money = float(input('Введите сумму: '))
-        d, m, y = map(int, input('Введите дату: ').split())
+        spend_of_money = input('Введите сумму: ')
+        try:
+            format_spend_of_money = round(float(spend_of_money.replace(',', '.')), 2)
+        except ValueError:
+            print('Ошибка: неверное значение суммы')
+            return False
+        date_add = input('Введите дату: ')
+        format_date = date_add.replace('/', '.')
+        date_list = format_date.split('.')
+        if date_list[0].isdigit() and len(date_list[0]) == 2 and date_list[1].isdigit() \
+                and len(date_list[1]) == 2 and date_list[2].isdigit() and len(date_list[2]) == 4:
+            day = int(date_list[0])
+            month = int(date_list[1])
+            year = int(date_list[2])
+        else:
+            print('Ошибка: неверный формат даты')
+            return False
+
         spend_inf = {
             'category': category,
-            'spend_of_money': spend_of_money,
-            'date': str(datetime.date(y, m, d))
+            'spend_of_money': format_spend_of_money,
+            'date': str(datetime.date(year, month, day))
         }
         self.spending_plan['spending'].append(spend_inf)
         with open('data.json', 'w', encoding='utf-8') as save_file:
@@ -48,13 +64,19 @@ def menu(command):
         const.show()
     elif command == 'del':
         const.delete()
+    else:
+        print('Неизвестная команда.')
 
 
 with open('data.json', 'r') as data_file:
     data = json.load(data_file)
     if data == "empty":
-        day, month, year = map(int, input('Введите дату следующего поступления денег в формате ДД ММ ГГГГ').split())
-        next_income_date = datetime.date(year, month, day)
+        date_one = input('Введите дату следующего поступления денег в формате ДД ММ ГГГГ: ')
+        date_inc = date_one.split('.' or '/')
+        d = int(date_inc[0])
+        m = int(date_inc[1])
+        y = int(date_inc[2])
+        next_income_date = datetime.date(d, m, y)
         data = {
             "current_date": str(TODAY),
             "next_income_date": str(next_income_date),
