@@ -1,31 +1,18 @@
 {
-    "current_date": "2021-09-01 11:25:51.502416",
-    "next_income_date": "2021-09-01",
-    "spending": [
-        {
-            "category": "\u041c\u0435\u0434\u0438\u0446\u0438\u043d\u0430",
-            "spend_of_money": 2000.0,
-            "date": "2021-09-10"
-        },
-        {
-            "category": "rise",
-            "spend_of_money": 12.12,
-            "date": "2021-08-01"
-        },
-        {
-            "category": "paper",
-            "spend_of_money": 100.32,
-            "date": "2021-07-01"
-        },
-        {
-            "category": "paper",
-            "spend_of_money": 100.32,
-            "date": "2011-07-01"
-        },
-        {
-            "category": "music",
-            "spend_of_money": 162.0,
-            "date": "2021-09-01"
-        }
-    ]
+    "total_income": 50000.0,
+    "next_income_date": "2021-10-01",
+    "constant_spending": {
+        "spending": [
+            {
+                "category": "\u041a\u0432\u0430\u0440\u0442\u043f\u043b\u0430\u0442\u0430 ",
+                "spend_of_money": 9000.0,
+                "date": "2021-09-13"
+            }
+        ],
+        "total_const_spend": 0
+    },
+    "daily_exp": {
+        "total_daily_exp": 1518.5185185185185
+    },
+    "total_const_spend": 19000.0
 }
