@@ -18,7 +18,34 @@ class InputDevise:
             return False
         else:
             print(self.error_message)
-            return False 
+            return False
+
+    def in_float(self):
+        try:
+            format_spend_of_money = round(float(self.information.replace(',', '.')), 2)
+            return format_spend_of_money
+        except ValueError:
+            print('Ошибка: неверное значение суммы')
+            return False
+
+    def in_date(self):
+        try:
+            format_date = self.information.replace('/', '.')
+            date_list = format_date.split('.')
+            day = int(date_list[0])
+            month = int(date_list[1])
+            year = int(date_list[2])
+            date = str(datetime.date(year, month, day))
+            return date
+        except ValueError:
+            print('Ошибка: неверный формат даты')
+            return False
+
+    def in_agreement(self):
+        if self.information.lower() == 'y':
+            return 'yes'
+        else:
+            return 'no'
 
 
 class ConstantSpending:
@@ -26,37 +53,37 @@ class ConstantSpending:
         self.spending_plan = plan
 
     def show(self):
-        pprint(self.spending_plan)
+        print(f"Текущая дата: {self.spending_plan['current_date']}")
+        print(f"Дата следующего поступления денег: {self.spending_plan['next_income_date']}")
+        print()
+        for spend in self.spending_plan['spending']:
+            print(f"{spend['category']} {spend['spend_of_money']}")
+        print(f"ИТОГО: {self.count_total_sum()}")
 
     def add_exp(self):
         category = input('Введите категорию: ')
         spend_of_money = input('Введите сумму: ')
-        try:
-            format_spend_of_money = round(float(spend_of_money.replace(',', '.')), 2)
-        except ValueError:
-            print('Ошибка: неверное значение суммы')
+        coast_error_msg = 'Ошибка: Неверный формат данных.'
+        exp = InputDevise(spend_of_money, coast_error_msg)
+        exp_sum = exp.in_float()
+        if not exp_sum:
             return False
         date_add = input('Введите дату: ')
-        format_date = date_add.replace('/', '.')
-        date_list = format_date.split('.')
-        if date_list[0].isdigit() and len(date_list[0]) == 2 and date_list[1].isdigit() \
-                and len(date_list[1]) == 2 and date_list[2].isdigit() and len(date_list[2]) == 4:
-            day = int(date_list[0])
-            month = int(date_list[1])
-            year = int(date_list[2])
-        else:
-            print('Ошибка: неверный формат даты')
+        exp_error_msg = 'Ошибка: Неверный формат даты'
+        exp_date_class = InputDevise(date_add, exp_error_msg)
+        exp_date = exp_date_class.in_date()
+        if not exp_date:
             return False
 
         spend_inf = {
             'category': category,
-            'spend_of_money': format_spend_of_money,
-            'date': str(datetime.date(year, month, day))
+            'spend_of_money': exp_sum,
+            'date': exp_date
         }
         self.spending_plan['spending'].append(spend_inf)
         with open('data.json', 'w', encoding='utf-8') as save_file:
             json.dump(self.spending_plan, save_file, indent=4)
-        print(f'Трата категории "{category.strip().capitalize()}" на сумму {format_spend_of_money} рублей добавлена.')
+        print(f'Трата категории "{category.strip().capitalize()}" на сумму {exp_sum} рублей добавлена.')
 
     def delete(self):
         print('\nКакую трату вы хотите удалить?\n')
@@ -66,6 +93,7 @@ class ConstantSpending:
             num += 1
             select_spend[num] = item
             print(f"{num} - {item['category']} {item['spend_of_money']} {item['date']}")
+        print(f"ИТОГО: {self.count_total_sum()}")
         err_msg = 'Ошибка: Неверный формат.'
         select_num = InputDevise(input('Введите номер: '), err_msg)
         select = select_num.in_integer()
@@ -78,13 +106,21 @@ class ConstantSpending:
             json.dump(self.spending_plan, save_file, indent=4)
 
     def delete_all(self):
-        agreement = input('Вы уверены, что хотите удалить все траты? (Y/N)').lower()
-        if agreement == 'y':
+        agreement = input('Вы уверены, что хотите удалить все траты? (Y/N)')
+        agr_del_class = InputDevise(agreement, "")
+        agr = agr_del_class.in_agreement()
+        if agr == 'yes':
             self.spending_plan['spending'] = []
             with open('data.json', 'w') as data_del:
                 json.dump(self.spending_plan, data_del, indent=4)
         else:
             pass
+
+    def count_total_sum(self):
+        total_sum = 0
+        for num in self.spending_plan['spending']:
+            total_sum += num['spend_of_money']
+        return total_sum
 
 
 def menu(command):
