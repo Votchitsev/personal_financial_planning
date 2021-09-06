@@ -57,16 +57,15 @@ class InformationGenerator:
         days_between = datetime.datetime.strptime(self.data['start_date'], '%Y-%m-%d') - \
                        datetime.datetime.strptime(self.data['next_income_date'], '%Y-%m-%d')
         days_between_int = int(str(abs(days_between)).split()[0])
-        return days_between_int
+        return days_between_int + 1
 
     def reset(self):
-        quest = input('Вы уверены, что хотите очистить библиотеку?')
+        quest = input('Вы уверены, что хотите очистить библиотеку?: ')
         quest_error_msg = 'Ошибка. Неверный формат данных'
         quest_reset_obj = InputDevise(quest, quest_error_msg)
         answer = quest_reset_obj.in_agreement()
-        if answer == 'y':
-            reset_str = "empty"
-            self.data = reset_str
+        if answer == 'yes':
+            self.data = "empty"
             with open('data.json', 'w', encoding='utf-8') as reset_file:
                 json.dump(self.data, reset_file, indent=4)
             print('Библиотека трат очищена')
