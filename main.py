@@ -50,14 +50,28 @@ class InputDevise:
 
 
 class InformationGenerator:
-    def __init__(self,  now, common_information):
-        self.today = now
+    def __init__(self,  common_information):
         self.data = common_information
 
     def count_days(self):
-        days_between = self.today - datetime.datetime.strptime(self.data['next_income_date'], '%Y-%m-%d')
+        days_between = datetime.datetime.strptime(self.data['start_date'], '%Y-%m-%d') - \
+                       datetime.datetime.strptime(self.data['next_income_date'], '%Y-%m-%d')
         days_between_int = int(str(abs(days_between)).split()[0])
         return days_between_int
+
+    def reset(self):
+        quest = input('Вы уверены, что хотите очистить библиотеку?')
+        quest_error_msg = 'Ошибка. Неверный формат данных'
+        quest_reset_obj = InputDevise(quest, quest_error_msg)
+        answer = quest_reset_obj.in_agreement()
+        if answer == 'y':
+            reset_str = "empty"
+            self.data = reset_str
+            with open('data.json', 'w', encoding='utf-8') as reset_file:
+                json.dump(self.data, reset_file, indent=4)
+            print('Библиотека трат очищена')
+        else:
+            pass
 
 
 class ConstantSpending:
@@ -72,7 +86,7 @@ class ConstantSpending:
         for spend in self.spending_plan['constant_spending']['spending']:
             print(f"{spend['category']} {spend['spend_of_money']}")
         print(f"ИТОГО: {self.count_total_sum()}")
-        days_obj = InformationGenerator(current_date, self.spending_plan)
+        days_obj = InformationGenerator(self.spending_plan)
         days = days_obj.count_days()
         print(f"Остаток на {days} дней: {self.spending_plan['total_income'] - self.count_total_sum()}")
         print(f"Можно тратить в день {round(data['daily_exp']['total_daily_exp'], 2)} рублей")
@@ -144,15 +158,14 @@ class ConstantSpending:
 
 
 class DailyExp:
-    def __init__(self, now, common_information):
-        self.today = now
+    def __init__(self, common_information):
         self.data = common_information
         self.income = (self.data['total_income'])
-        daily_exp_list = {}
+        self.daily_exp_list = {}
 
     def count_daily_exp(self):
         balance = self.income - const.count_total_sum()
-        inf_obj = InformationGenerator(self.today, self.data)
+        inf_obj = InformationGenerator(self.data)
         days_between_int = inf_obj.count_days()
         day_exp = balance / days_between_int
         self.data['daily_exp']['total_daily_exp'] = day_exp
@@ -160,18 +173,51 @@ class DailyExp:
             json.dump(self.data, save_file, indent=4)
 
     def add_daily_exp(self):
-        
+        balance = self.data['daily_exp']['total_daily_exp']
+        exp_date = input('Введите дату: ')
+        exp_date_error_msg = 'Ошибка: Неверный формат даты.'
+        exp_date_obj = InputDevise(exp_date, exp_date_error_msg)
+        date = exp_date_obj.in_date()
+        exp_sum = input('Введите сумму потраченных денег: ')
+        exp_sum_error_msg = 'Ошибка: Неверное значение.'
+        exp_sum_obj = InputDevise(exp_sum, exp_sum_error_msg)
+        sum_ = exp_sum_obj.in_float()
+        self.data['daily_exp']['daily_exp_list'][date] = {
+            'in_balance': balance,
+            'exp_sum': sum_,
+            'out_balance': balance-sum_}
+        with open('data.json', 'w', encoding='utf-8') as exp_file:
+            json.dump(self.data, exp_file, indent=4)
+
+    def refresh(self):
+        balance = self.data['daily_exp']['total_daily_exp']
+        for exp in self.data['daily_exp']['daily_exp_list'].values():
+            exp['in_balance'] = balance
+            balance -= exp['exp_sum']
+            balance += self.data['daily_exp']['total_daily_exp']
+            exp['out_balance'] = balance
+
+        with open('data.json', 'w', encoding='utf-8') as exp_file:
+            json.dump(self.data, exp_file, indent=4)
 
 
 def menu(command):
     if command == 'add':
         const.add_exp()
+    elif command == 'a':
+        daily.add_daily_exp()
+        daily.refresh()
     elif command == 'show':
         const.show(TODAY)
     elif command == 'del':
         const.delete()
     elif command == 'del_all':
         const.delete_all()
+    # elif command == 'day':
+    #     daily.count_daily_limit()
+    elif command == 'reset':
+        reset_obj = InformationGenerator(data)
+        reset_obj.reset()
     else:
         print('Неизвестная команда.')
 
@@ -180,21 +226,40 @@ if __name__ == "__main__":
     with open('data.json', 'r') as data_file:
         data = json.load(data_file)
         if data == "empty":
+            date_zero = input('Введите дату начала отчетного периода ДД ММ ГГГГ: ')
+            date_zero_err_msg = 'Ошибка: Неверный формат даты'
+            date_zero_obj = InputDevise(date_zero, date_zero_err_msg)
+            zero_date = date_zero_obj.in_date()
             date_one = input('Введите дату следующего поступления денег в формате ДД ММ ГГГГ: ')
             date_one_err_msg = 'Ошибка: Неверный формат даты'
             date_one_obj = InputDevise(date_one, date_one_err_msg)
             next_income_date = date_one_obj.in_date()
+
             data = {
                 "total_income": 0,
+                "start_date": zero_date,
                 "next_income_date": next_income_date,
                 "constant_spending": {
                     "spending": [],
                     "total_const_spend": 0
                 },
                 "daily_exp": {
-                    "total_daily_exp": 0
+                    "total_daily_exp": 0,
+                    "daily_exp_list": {}
                 }
             }
+            inf = InformationGenerator(data)
+            date_list = [f"{data['start_date'][0:7]}-{int(data['start_date'][8:]) + i}" for i in range(inf.count_days()
+                                                                                                       + 1)]
+            date_list_format = []
+            for i in date_list:
+                if len(i) == 9:
+                    i = f"{i[0:8]}{0}{i[8]}"
+                    date_list_format.append(i)
+                else:
+                    date_list_format.append(i)
+            date_dict = {x: {'in_balance': 0, 'exp_sum': 0, 'out_balance': 0} for x in date_list_format}
+            data['daily_exp']['daily_exp_list'] = date_dict
         else:
             pass
         if data['total_income'] == 0:
@@ -210,8 +275,9 @@ if __name__ == "__main__":
         json.dump(data, file, indent=4)
 
     const = ConstantSpending(data)
-    daily = DailyExp(TODAY, data)
+    daily = DailyExp(data)
 
+    daily.refresh()
     while True:
         mes = input('Введите команду: ')
         if mes == 'exit':
