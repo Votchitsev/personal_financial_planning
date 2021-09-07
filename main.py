@@ -1,7 +1,6 @@
 import datetime
 import json
 
-
 TODAY = datetime.datetime.today()
 
 
@@ -49,7 +48,7 @@ class InputDevise:
 
 
 class InformationGenerator:
-    def __init__(self,  common_information):
+    def __init__(self, common_information):
         self.data = common_information
 
     def count_days(self):
@@ -88,14 +87,17 @@ class ConstantSpending:
         daily.count_daily_exp()
         print(f"Текущая дата: {current_date}")
         print(f"Дата следующего поступления денег: {self.spending_plan['next_income_date']}")
-        print('Список расходов: ')
-        for spend in self.spending_plan['constant_spending']['spending']:
-            print(f"{spend['category']} {spend['spend_of_money']}")
-        print(f"ИТОГО: {self.count_total_sum()}")
-        days_obj = InformationGenerator(self.spending_plan)
-        days = days_obj.count_days()
-        print(f"Остаток на {days} дней: {self.spending_plan['total_income'] - self.count_total_sum()}")
-        print(f"Можно тратить в день {round(init_info['daily_exp']['total_daily_exp'], 2)} рублей")
+        if len(self.spending_plan['constant_spending']['spending']) == 0:
+            print('Постоянных расходов нет.')
+        else:
+            print('Список расходов: ')
+            for spend in self.spending_plan['constant_spending']['spending']:
+                print(f"{spend['category']} {spend['spend_of_money']}")
+            print(f"ИТОГО: {self.count_total_sum()}")
+        # days_obj = InformationGenerator(self.spending_plan)
+        # days = days_obj.count_days()
+        # print(f"Остаток на {days} дней: {self.spending_plan['total_income'] - self.count_total_sum()}")
+        # print(f"Можно тратить в день {round(init_info['daily_exp']['total_daily_exp'], 2)} рублей")
 
     def add_exp(self):
         category = input('Введите категорию: ')
@@ -191,7 +193,7 @@ class DailyExp:
         self.data['daily_exp']['daily_exp_list'][date] = {
             'in_balance': balance,
             'exp_sum': sum_,
-            'out_balance': balance-sum_}
+            'out_balance': balance - sum_}
         with open('data.json', 'w', encoding='utf-8') as exp_file:
             json.dump(self.data, exp_file, indent=4)
 
@@ -206,6 +208,17 @@ class DailyExp:
         with open('data.json', 'w', encoding='utf-8') as exp_file:
             json.dump(self.data, exp_file, indent=4)
 
+    def show(self, current_date):
+        days_obj = InformationGenerator(self.data)
+        days = days_obj.count_days()
+        date = str(current_date.date())
+        print(f"Остаток на {days} дней: {self.data['total_income'] - const.count_total_sum()}")
+        print(f"Можно тратить в день {round(init_info['daily_exp']['total_daily_exp'], 2)} рублей")
+        balance = self.data['daily_exp']['daily_exp_list'][date]['in_balance']
+        exp = self.data['daily_exp']['daily_exp_list'][date]['exp_sum']
+        today_limit = balance - exp
+        print(f"СЕГОДНЯ можно тратить {round(today_limit, 2)} рублей")
+
 
 def menu(command):
     if command == 'add':
@@ -215,6 +228,7 @@ def menu(command):
         daily.refresh()
     elif command == 'show':
         const.show(TODAY)
+        daily.show(TODAY)
     elif command == 'del':
         const.delete()
     elif command == 'del_all':
@@ -256,9 +270,10 @@ if __name__ == "__main__":
                         "daily_exp_list": {}
                     }
                 }
-                inf = InformationGenerator(data)
-                date_list = [f"{data['start_date'][0:7]}-{int(data['start_date'][8:]) + i}" for i in range(inf.count_days()
-                                                                                                           + 1)]
+                info = InformationGenerator(data)
+                date_list = [f"{data['start_date'][0:7]}-{int(data['start_date'][8:]) + i}" for i in
+                             range(info.count_days()
+                                   + 1)]
                 date_list_format = []
                 for i in date_list:
                     if len(i) == 9:
@@ -282,6 +297,7 @@ if __name__ == "__main__":
         with open('data.json', 'w', encoding='utf-8') as file:
             json.dump(data, file, indent=4)
         return data
+
 
     init_info = initialization()
     const = ConstantSpending(init_info)
