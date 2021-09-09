@@ -102,18 +102,14 @@ class Expenses:
 
     def add_exp(self):
         category = input('Введите категорию: ')
+        if category == 'exit':
+            return 'exit'
         spend_of_money = input('Введите сумму: ')
         coast_error_msg = 'Ошибка: Неверный формат данных.'
         exp = InputDevise(spend_of_money, coast_error_msg)
         exp_sum = exp.in_float()
         if not exp_sum:
             return False
-        # date_add = input('Введите дату: ')
-        # exp_error_msg = 'Ошибка: Неверный формат даты'
-        # exp_date_class = InputDevise(date_add, exp_error_msg)
-        # exp_date = exp_date_class.in_date()
-        # if not exp_date:
-        #     return False
         spend_inf = {
             'category': category,
             'spend_of_money': exp_sum
@@ -202,7 +198,11 @@ class Expenses:
 
 def menu(command):
     if command == 'add':
-        expenses.add_exp()
+        result = expenses.add_exp()
+        if not result:
+            expenses.add_exp()
+        elif result == 'exit':
+            return False
     elif command == 'a':
         expenses.add_daily_exp()
         expenses.refresh()
@@ -286,9 +286,9 @@ if __name__ == "__main__":
     while True:
         init_info = initialization()
         expenses = Expenses(init_info)
-        expenses.refresh()
         mes = input('Введите команду: ')
         if mes == 'exit':
             print('Работа завершена.')
             break
         menu(mes)
+        expenses.refresh()
