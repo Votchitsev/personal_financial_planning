@@ -212,8 +212,6 @@ def menu(command):
         expenses.delete()
     elif command == 'del_all':
         expenses.delete_all()
-    # elif command == 'day':
-    #     daily.count_daily_limit()
     elif command == 'reset':
         expenses.reset()
     elif command == 'refresh':
