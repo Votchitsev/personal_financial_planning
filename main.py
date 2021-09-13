@@ -28,6 +28,8 @@ class InputDevise:
             return False
 
     def in_date(self):
+        if self.information == 'exit':
+            return self.information
         try:
             format_date = self.information.replace('/', '.')
             date_list = format_date.split('.')
@@ -54,9 +56,10 @@ class Expenses:
         self.daily_exp_list = {}
 
     def count_days(self):
-        days_between = datetime.datetime.strptime(self.data['start_date'], '%Y-%m-%d') - \
-                       datetime.datetime.strptime(self.data['next_income_date'], '%Y-%m-%d')
-        days_between_int = int(str(abs(days_between)).split()[0])
+        start = datetime.datetime.strptime(self.data['start_date'], '%Y-%m-%d')
+        finish = datetime.datetime.strptime(self.data['next_income_date'], '%Y-%m-%d')
+        days_between = start - finish
+        days_between_int = int(str(days_between).split()[0])
         return days_between_int + 1
 
     def reset(self):
@@ -70,7 +73,7 @@ class Expenses:
                 json.dump(self.data, reset_file, indent=4)
             print('Библиотека трат очищена')
         else:
-            pass
+            return False
         quest_continue = input('Хотите ли вы ввести данные?: ')
         quest_continue_error_msg = 'Ошибка. Неверный формат данных'
         quest_continue_obj = InputDevise(quest_continue, quest_continue_error_msg)
@@ -213,7 +216,9 @@ def menu(command):
     elif command == 'del_all':
         expenses.delete_all()
     elif command == 'reset':
-        expenses.reset()
+        reset = expenses.reset()
+        if not reset:
+            return False
     elif command == 'refresh':
         expenses.refresh()
     else:
@@ -228,10 +233,16 @@ def initialization():
             date_zero_err_msg = 'Ошибка: Неверный формат даты'
             date_zero_obj = InputDevise(date_zero, date_zero_err_msg)
             zero_date = date_zero_obj.in_date()
+            if not zero_date:
+                return False
+            elif zero_date == 'exit':
+                return 'exit'
             date_one = input('Введите дату следующего поступления денег в формате ДД ММ ГГГГ: ')
             date_one_err_msg = 'Ошибка: Неверный формат даты'
             date_one_obj = InputDevise(date_one, date_one_err_msg)
             next_income_date = date_one_obj.in_date()
+            if not next_income_date:
+                return False
 
             data = {
                 "total_income": 0,
@@ -248,13 +259,31 @@ def initialization():
             }
 
             def count_days(inf):
-                days_between = datetime.datetime.strptime(inf['start_date'], '%Y-%m-%d') - \
-                               datetime.datetime.strptime(inf['next_income_date'], '%Y-%m-%d')
-                days_between_int = int(str(abs(days_between)).split()[0])
-                return days_between_int + 1
+                start = datetime.datetime.strptime(inf['next_income_date'], '%Y-%m-%d')
+                finish = datetime.datetime.strptime(inf['start_date'], '%Y-%m-%d')
+                days_between = start - finish
+                days_between_int = int(str(days_between).split()[0])
+                if days_between_int <= 0:
+                    print('Ошибка. Начальная дата больше конечной.')
+                    return False
+                else:
+                    return days_between_int + 1
 
-            date_list = [f"{data['start_date'][0:7]}-{int(data['start_date'][8:]) + i}" for i in range(count_days(data)
-                                                                                                       + 1)]
+            def check_today(current_date, inf):
+                if current_date > datetime.datetime.strptime(inf['start_date'], '%Y-%m-%d'):
+                    print('Ошибка. Текущая дата больше даты окончания отчетного периода.')
+                    return False
+                else:
+                    return True
+
+            if not count_days(data):
+                return False
+            elif not check_today(TODAY, data):
+                return False
+            else:
+                date_list = [f"{data['start_date'][0:7]}-{int(data['start_date'][8:]) + i}" for i in
+                             range(count_days(data) + 1)]
+
             date_list_format = []
             for i in date_list:
                 if len(i) == 9:
@@ -283,10 +312,19 @@ def initialization():
 if __name__ == "__main__":
     while True:
         init_info = initialization()
-        expenses = Expenses(init_info)
-        mes = input('Введите команду: ')
-        if mes == 'exit':
+        if not init_info:
+            init_info = initialization()
+            if init_info == 'exit':
+                print('Работа завершена.')
+                break
+        elif init_info == 'exit':
             print('Работа завершена.')
             break
-        menu(mes)
-        expenses.refresh()
+        else:
+            expenses = Expenses(init_info)
+            mes = input('Введите команду: ')
+            if mes == 'exit':
+                print('Работа завершена.')
+                break
+            menu(mes)
+            expenses.refresh()
