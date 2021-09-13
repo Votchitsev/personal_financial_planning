@@ -48,10 +48,11 @@ class InputDevise:
 
 
 class Expenses:
-    def __init__(self, information):
+    def __init__(self, information, current_date):
         self.data = information
         self.income = (self.data['total_income'])
         self.daily_exp_list = {}
+        self.current_date = current_date
 
     def count_days(self):
         days_between = datetime.datetime.strptime(self.data['start_date'], '%Y-%m-%d') - \
@@ -77,12 +78,13 @@ class Expenses:
         answer_continue = quest_continue_obj.in_agreement()
         if answer_continue == 'yes':
             initialization()
+            return True
         else:
             return False
 
-    def show(self, current_date):
+    def show(self):
         expenses.count_daily_exp()
-        print(f"Текущая дата: {current_date}")
+        print(f"Текущая дата: {self.current_date}")
         print(f"Дата следующего поступления денег: {self.data['next_income_date']}")
         if len(self.data['constant_spending']['spending']) == 0:
             print('Постоянных расходов нет.')
@@ -92,19 +94,16 @@ class Expenses:
                 print(f"{spend['category']} {spend['spend_of_money']}")
             print(f"ИТОГО: {self.count_total_sum()}")
         days = self.count_days()
-        date = str(current_date.date())
+        date = str(self.current_date.date())
         print(f"Остаток на {days} дней: {self.data['total_income'] - self.count_total_sum()}")
         print(f"Можно тратить в день {round(self.data['daily_exp']['total_daily_exp'], 2)} рублей")
         balance = self.data['daily_exp']['daily_exp_list'][date]['in_balance']
         exp = self.data['daily_exp']['daily_exp_list'][date]['exp_sum']
         today_limit = balance - exp
         print(f"СЕГОДНЯ можно тратить {round(today_limit, 2)} рублей")
+        return True
 
-    def add_exp(self):
-        category = input('Введите категорию: ')
-        if category == 'exit':
-            return 'exit'
-        spend_of_money = input('Введите сумму: ')
+    def add_exp(self, category, spend_of_money):
         coast_error_msg = 'Ошибка: Неверный формат данных.'
         exp = InputDevise(spend_of_money, coast_error_msg)
         exp_sum = exp.in_float()
@@ -120,6 +119,7 @@ class Expenses:
             json.dump(self.data, save_file, indent=4)
         print(f'Трата категории "{category.strip().capitalize()}" на сумму {exp_sum} рублей добавлена.')
         expenses.count_daily_exp()
+        return True
 
     def delete(self):
         print('\nКакую трату вы хотите удалить?\n')
@@ -141,6 +141,7 @@ class Expenses:
         with open('data.json', 'w', encoding='utf-8') as save_file:
             json.dump(self.data, save_file, indent=4)
         expenses.count_daily_exp()
+        return True
 
     def delete_all(self):
         agreement = input('Вы уверены, что хотите удалить все траты? (Y/N)')
@@ -152,6 +153,7 @@ class Expenses:
                 json.dump(self.data, data_del, indent=4)
         else:
             pass
+        return True
 
     def count_total_sum(self):
         total_sum = 0
@@ -166,14 +168,13 @@ class Expenses:
         self.data['daily_exp']['total_daily_exp'] = day_exp
         with open('data.json', 'w', encoding='utf-8') as save_file:
             json.dump(self.data, save_file, indent=4)
+        return True
 
-    def add_daily_exp(self):
+    def add_daily_exp(self, exp_date, exp_sum):
         balance = self.data['daily_exp']['total_daily_exp']
-        exp_date = input('Введите дату: ')
         exp_date_error_msg = 'Ошибка: Неверный формат даты.'
         exp_date_obj = InputDevise(exp_date, exp_date_error_msg)
         date = exp_date_obj.in_date()
-        exp_sum = input('Введите сумму потраченных денег: ')
         exp_sum_error_msg = 'Ошибка: Неверное значение.'
         exp_sum_obj = InputDevise(exp_sum, exp_sum_error_msg)
         sum_ = exp_sum_obj.in_float()
@@ -183,6 +184,7 @@ class Expenses:
             'out_balance': balance - sum_}
         with open('data.json', 'w', encoding='utf-8') as exp_file:
             json.dump(self.data, exp_file, indent=4)
+        return True
 
     def refresh(self):
         balance = self.data['daily_exp']['total_daily_exp']
@@ -194,30 +196,37 @@ class Expenses:
 
         with open('data.json', 'w', encoding='utf-8') as exp_file:
             json.dump(self.data, exp_file, indent=4)
+        return True
 
 
-def menu(command):
-    if command == 'add':
-        result = expenses.add_exp()
-        if not result:
-            expenses.add_exp()
-        elif result == 'exit':
-            return False
-    elif command == 'a':
-        expenses.add_daily_exp()
-        expenses.refresh()
-    elif command == 'show':
-        expenses.show(TODAY)
-    elif command == 'del':
-        expenses.delete()
-    elif command == 'del_all':
-        expenses.delete_all()
-    elif command == 'reset':
-        expenses.reset()
-    elif command == 'refresh':
-        expenses.refresh()
-    else:
-        print('Неизвестная команда.')
+class Interpreter:
+    def __init__(self):
+        self.first_value_of_command = {
+            'add': expenses.add_exp,    'show': expenses.show,          'exit': self.exit,  'reset': expenses.reset,
+            'del': expenses.delete,     'delete': expenses.delete_all,  'a': expenses.add_daily_exp
+        }
+
+    def select_command(self, command):
+        try:
+            self.exit()
+            if len(command) == 1:
+                return self.first_value_of_command[command[0]]()
+            elif len(command) == 2:
+                val_1 = command[1]
+                return self.first_value_of_command[command[0]](val_1)
+            elif len(command) == 3:
+                val_1 = command[1]
+                val_2 = command[2]
+                return self.first_value_of_command[command[0]](val_1, val_2)
+        except TypeError:
+            print('Неизвестная команда.')
+            return True
+
+    def exit(self):
+        if self.select_command == 'exit':
+            exit()
+        else:
+            pass
 
 
 def initialization():
@@ -283,10 +292,10 @@ def initialization():
 if __name__ == "__main__":
     while True:
         init_info = initialization()
-        expenses = Expenses(init_info)
-        mes = input('Введите команду: ')
-        if mes == 'exit':
+        expenses = Expenses(init_info, TODAY)
+        inter = Interpreter()
+        select = inter.select_command(list(map(str, input('--> ').split())))
+        if not select:
             print('Работа завершена.')
             break
-        menu(mes)
         expenses.refresh()
