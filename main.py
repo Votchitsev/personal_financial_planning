@@ -83,7 +83,6 @@ class Expenses:
             return False
 
     def show(self):
-        expenses.count_daily_exp()
         print(f"Текущая дата: {self.current_date}")
         print(f"Дата следующего поступления денег: {self.data['next_income_date']}")
         if len(self.data['constant_spending']['spending']) == 0:
@@ -118,7 +117,6 @@ class Expenses:
         with open('data.json', 'w', encoding='utf-8') as save_file:
             json.dump(self.data, save_file, indent=4)
         print(f'Трата категории "{category.strip().capitalize()}" на сумму {exp_sum} рублей добавлена.')
-        expenses.count_daily_exp()
         return True
 
     def delete(self):
@@ -140,7 +138,6 @@ class Expenses:
         print('Трата удалена.')
         with open('data.json', 'w', encoding='utf-8') as save_file:
             json.dump(self.data, save_file, indent=4)
-        expenses.count_daily_exp()
         return True
 
     def delete_all(self):
@@ -187,6 +184,7 @@ class Expenses:
         return True
 
     def refresh(self):
+        self.count_daily_exp()
         balance = self.data['daily_exp']['total_daily_exp']
         for exp in self.data['daily_exp']['daily_exp_list'].values():
             exp['in_balance'] = balance
@@ -202,13 +200,14 @@ class Expenses:
 class Interpreter:
     def __init__(self):
         self.first_value_of_command = {
-            'add': expenses.add_exp,    'show': expenses.show,          'exit': self.exit,  'reset': expenses.reset,
+            'add': expenses.add_exp,    'show': expenses.show,          'exit': exit,           'reset': expenses.reset,
             'del': expenses.delete,     'delete': expenses.delete_all,  'a': expenses.add_daily_exp
         }
 
-    def select_command(self, command):
+    def select_command(self):
+        expenses.refresh()
+        command = list(map(str, input('--> ').split()))
         try:
-            self.exit()
             if len(command) == 1:
                 return self.first_value_of_command[command[0]]()
             elif len(command) == 2:
@@ -219,14 +218,11 @@ class Interpreter:
                 val_2 = command[2]
                 return self.first_value_of_command[command[0]](val_1, val_2)
         except TypeError:
-            print('Неизвестная команда.')
+            print('TypeError: Неизвестная команда.')
             return True
-
-    def exit(self):
-        if self.select_command == 'exit':
-            exit()
-        else:
-            pass
+        except KeyError:
+            print('KeyError: Неизвестная команда.')
+            return True
 
 
 def initialization():
@@ -294,8 +290,4 @@ if __name__ == "__main__":
         init_info = initialization()
         expenses = Expenses(init_info, TODAY)
         inter = Interpreter()
-        sel = inter.select_command(list(map(str, input('--> ').split())))
-        if not sel:
-            print('Работа завершена.')
-            break
-        expenses.refresh()
+        sel = inter.select_command()
