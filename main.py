@@ -114,7 +114,7 @@ class Expenses:
             'spend_of_money': exp_sum
         }
         self.data['constant_spending']['spending'].append(spend_inf)
-        self.data['total_const_spend'] = self.count_total_sum()
+        self.data['constant_spending']['total_const_spend'] = self.count_total_sum()
         with open('data.json', 'w', encoding='utf-8') as save_file:
             json.dump(self.data, save_file, indent=4)
         print(f'Трата категории "{category.strip().capitalize()}" на сумму {exp_sum} рублей добавлена.')
@@ -294,8 +294,8 @@ if __name__ == "__main__":
         init_info = initialization()
         expenses = Expenses(init_info, TODAY)
         inter = Interpreter()
-        select = inter.select_command(list(map(str, input('--> ').split())))
-        if not select:
+        sel = inter.select_command(list(map(str, input('--> ').split())))
+        if not sel:
             print('Работа завершена.')
             break
         expenses.refresh()
