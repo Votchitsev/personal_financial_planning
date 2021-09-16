@@ -183,6 +183,17 @@ class Expenses:
             json.dump(self.data, exp_file, indent=4)
         return True
 
+    def del_daily_exp(self, exp_date):
+        print(exp_date)
+        exp_date_obj_error_msg = 'Ошибка: Неверный формат даты.'
+        exp_date_obj = InputDevise(exp_date, exp_date_obj_error_msg)
+        date = exp_date_obj.in_date()
+        print(date)
+        del self.data['daily_exp']['daily_exp_list'][date]
+        with open('data.json', 'w', encoding='utf-8') as del_exp_file:
+            json.dump(self.data, del_exp_file, indent=4)
+        return True
+
     def refresh(self):
         self.count_daily_exp()
         balance = self.data['daily_exp']['total_daily_exp']
@@ -200,8 +211,9 @@ class Expenses:
 class Interpreter:
     def __init__(self):
         self.first_value_of_command = {
-            'add': expenses.add_exp,    'show': expenses.show,          'exit': exit,           'reset': expenses.reset,
-            'del': expenses.delete,     'delete': expenses.delete_all,  'a': expenses.add_daily_exp
+            'add': expenses.add_exp,    'show': expenses.show,          'exit': exit,
+            'del': expenses.delete,     'delete': expenses.delete_all,  'a': expenses.add_daily_exp,
+            'reset': expenses.reset,    'd': expenses.del_daily_exp
         }
 
     def select_command(self):
