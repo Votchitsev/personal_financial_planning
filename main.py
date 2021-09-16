@@ -1,5 +1,6 @@
 import datetime
 import json
+from pprint import pprint
 
 TODAY = datetime.datetime.today()
 
@@ -184,14 +185,14 @@ class Expenses:
         return True
 
     def del_daily_exp(self, exp_date):
-        print(exp_date)
         exp_date_obj_error_msg = 'Ошибка: Неверный формат даты.'
         exp_date_obj = InputDevise(exp_date, exp_date_obj_error_msg)
         date = exp_date_obj.in_date()
-        print(date)
+
         del self.data['daily_exp']['daily_exp_list'][date]
         with open('data.json', 'w', encoding='utf-8') as del_exp_file:
             json.dump(self.data, del_exp_file, indent=4)
+        print(f"Расход за {date} удален.")
         return True
 
     def refresh(self):
@@ -207,13 +208,27 @@ class Expenses:
             json.dump(self.data, exp_file, indent=4)
         return True
 
+    def show_daily_exp(self):
+        daily_exp_list = self.data['daily_exp']['daily_exp_list']
+
+        for exp in daily_exp_list.items():
+            if exp[0] != str(self.current_date)[0:10]:
+                print(f"{exp[0]} израсходовано {exp[1]['exp_sum']} рублей.")
+            else:
+                print(f"СЕГОДНЯ израсходовано {exp[1]['exp_sum']} рублей.")
+                break
+        current_in_balance = daily_exp_list[str(self.current_date)[0:10]]['in_balance']
+        current_exp = daily_exp_list[str(self.current_date)[0:10]]['exp_sum']
+        allow_sum = round((current_in_balance - current_exp), 2)
+        print(f"Можно тратить {allow_sum} рублей")
+
 
 class Interpreter:
     def __init__(self):
         self.first_value_of_command = {
             'add': expenses.add_exp,    'show': expenses.show,          'exit': exit,
             'del': expenses.delete,     'delete': expenses.delete_all,  'a': expenses.add_daily_exp,
-            'reset': expenses.reset,    'd': expenses.del_daily_exp
+            'reset': expenses.reset,    'd': expenses.del_daily_exp,    's': expenses.show_daily_exp
         }
 
     def select_command(self):
