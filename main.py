@@ -1,6 +1,5 @@
 import datetime
 import json
-from pprint import pprint
 
 TODAY = datetime.datetime.today()
 
