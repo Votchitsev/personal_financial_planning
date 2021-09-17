@@ -212,30 +212,6 @@ class Expenses:
 
     def show_daily_exp(self):
         daily_exp_list = self.data['daily_exp']['daily_exp_list']
-
-<<<<<<< HEAD
-def menu(command):
-    if command == 'add':
-        result = expenses.add_exp()
-        if not result:
-            expenses.add_exp()
-        elif result == 'exit':
-            return False
-    elif command == 'a':
-        expenses.add_daily_exp()
-        expenses.refresh()
-    elif command == 'show':
-        expenses.show(TODAY)
-    elif command == 'del':
-        expenses.delete()
-    elif command == 'del_all':
-        expenses.delete_all()
-    elif command == 'reset':
-        reset = expenses.reset()
-        if not reset:
-            return False
-    elif command == 'refresh':
-=======
         for exp in daily_exp_list.items():
             if exp[0] != str(self.current_date)[0:10]:
                 print(f"{exp[0]} израсходовано {exp[1]['exp_sum']} рублей.")
@@ -257,7 +233,6 @@ class Interpreter:
         }
 
     def select_command(self):
->>>>>>> dev
         expenses.refresh()
         command = list(map(str, input('--> ').split()))
         try:
@@ -368,4 +343,3 @@ if __name__ == "__main__":
         expenses = Expenses(init_info, TODAY)
         inter = Interpreter()
         sel = inter.select_command()
-
