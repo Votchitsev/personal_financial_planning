@@ -30,11 +30,7 @@ class InputDevise:
     def in_date(self):
         try:
             format_date = self.information.replace('/', '.')
-            date_list = format_date.split('.')
-            day = int(date_list[0])
-            month = int(date_list[1])
-            year = int(date_list[2])
-            date = str(datetime.date(year, month, day))
+            date = datetime.datetime.strptime(format_date, '%d.%m.%Y')
             return date
         except ValueError:
             print('Ошибка: неверный формат даты')
@@ -55,8 +51,8 @@ class Expenses:
         self.current_date = current_date
 
     def count_days(self):
-        days_between = datetime.datetime.strptime(self.data['start_date'], '%Y-%m-%d') - \
-                       datetime.datetime.strptime(self.data['next_income_date'], '%Y-%m-%d')
+        days_between = datetime.datetime.strptime(self.data['start_date'], '%Y-%m-%d %H:%M:%S') - \
+                       datetime.datetime.strptime(self.data['next_income_date'], '%Y-%m-%d %H:%M:%S')
         days_between_int = int(str(abs(days_between)).split()[0])
         return days_between_int + 1
 
@@ -255,19 +251,19 @@ def initialization():
     with open('data.json', 'r') as data_file:
         data = json.load(data_file)
         if data == "empty":
-            date_zero = input('Введите дату начала отчетного периода ДД ММ ГГГГ: ')
-            date_zero_err_msg = 'Ошибка: Неверный формат даты'
-            date_zero_obj = InputDevise(date_zero, date_zero_err_msg)
-            zero_date = date_zero_obj.in_date()
-            date_one = input('Введите дату следующего поступления денег в формате ДД ММ ГГГГ: ')
-            date_one_err_msg = 'Ошибка: Неверный формат даты'
-            date_one_obj = InputDevise(date_one, date_one_err_msg)
-            next_income_date = date_one_obj.in_date()
+            start_date = input('Введите дату начала отчетного периода ДД ММ ГГГГ: ')
+            start_date_err_msg = 'Ошибка: Неверный формат даты'
+            start_date_obj = InputDevise(start_date, start_date_err_msg)
+            start_date = start_date_obj.in_date()
+            finish_date = input('Введите дату следующего поступления денег в формате ДД ММ ГГГГ: ')
+            finish_date_err_msg = 'Ошибка: Неверный формат даты'
+            finish_date_obj = InputDevise(finish_date, finish_date_err_msg)
+            finish_date = finish_date_obj.in_date()
 
             data = {
                 "total_income": 0,
-                "start_date": zero_date,
-                "next_income_date": next_income_date,
+                "start_date": str(start_date),
+                "next_income_date": str(finish_date),
                 "constant_spending": {
                     "spending": [],
                     "total_const_spend": 0
@@ -278,23 +274,12 @@ def initialization():
                 }
             }
 
-            def count_days(inf):
-                days_between = datetime.datetime.strptime(inf['start_date'], '%Y-%m-%d') - \
-                               datetime.datetime.strptime(inf['next_income_date'], '%Y-%m-%d')
-                days_between_int = int(str(abs(days_between)).split()[0])
-                return days_between_int + 1
-
-            date_list = [f"{data['start_date'][0:7]}-{int(data['start_date'][8:]) + i}" for i in range(count_days(data)
-                                                                                                       + 1)]
-            date_list_format = []
-            for i in date_list:
-                if len(i) == 9:
-                    i = f"{i[0:8]}{0}{i[8]}"
-                    date_list_format.append(i)
-                else:
-                    date_list_format.append(i)
-            date_dict = {x: {'in_balance': 0, 'exp_sum': 0, 'out_balance': 0} for x in date_list_format}
-            data['daily_exp']['daily_exp_list'] = date_dict
+            daily_list = {}
+            date = start_date
+            while date <= finish_date:
+                daily_list[str(date)] = {'in_balance': 0, 'exp_sum': 0, 'out_balance': 0}
+                date += datetime.timedelta(days=1)
+                data['daily_exp']['daily_exp_list'] = daily_list
         else:
             pass
         if data['total_income'] == 0:
