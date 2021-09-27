@@ -3,6 +3,8 @@ import json
 
 TODAY = datetime.datetime.today()
 
+engine = True
+
 
 class InputDevise:
     def __init__(self, input_information, error_message: str):
@@ -76,7 +78,9 @@ class Expenses:
             initialization()
             return True
         else:
-            return False
+            print('Ответ НЕТ')
+            global engine
+            engine = False
 
     def show(self):
         print(f"Текущая дата: {self.current_date}")
@@ -241,6 +245,9 @@ class Interpreter:
                 val_1 = command[1]
                 val_2 = command[2]
                 return self.first_value_of_command[command[0]](val_1, val_2)
+            else:
+                print('Неизвестная команда.')
+                return True
         except TypeError:
             print('TypeError: Неизвестная команда.')
             return True
@@ -253,14 +260,19 @@ def initialization():
     with open('data.json', 'r') as data_file:
         data = json.load(data_file)
         if data == "empty":
+
             start_date = input('Введите дату начала отчетного периода ДД ММ ГГГГ: ')
             start_date_err_msg = 'Ошибка: Неверный формат даты'
             start_date_obj = InputDevise(start_date, start_date_err_msg)
             start_date = start_date_obj.in_date()
+            if not start_date:
+                return
             finish_date = input('Введите дату следующего поступления денег в формате ДД ММ ГГГГ: ')
             finish_date_err_msg = 'Ошибка: Неверный формат даты'
             finish_date_obj = InputDevise(finish_date, finish_date_err_msg)
             finish_date = finish_date_obj.in_date()
+            if not finish_date:
+                return False
 
             data = {
                 "total_income": 0,
@@ -281,7 +293,7 @@ def initialization():
             while date <= finish_date:
                 daily_list[str(date)] = {'in_balance': 0, 'exp_sum': 0, 'out_balance': 0}
                 date += datetime.timedelta(days=1)
-                data['daily_exp']['daily_exp_list'] = daily_list
+                data["daily_exp"]["daily_exp_list"] = daily_list
         else:
             pass
         if data['total_income'] == 0:
@@ -299,8 +311,10 @@ def initialization():
 
 
 if __name__ == "__main__":
-    while True:
+    while engine:
         init_info = initialization()
+        if not init_info:
+            continue
         expenses = Expenses(init_info, TODAY)
         inter = Interpreter()
         sel = inter.select_command()
