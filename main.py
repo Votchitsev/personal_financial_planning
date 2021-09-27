@@ -89,9 +89,11 @@ class Expenses:
                 print(f"{spend['category']} {spend['spend_of_money']}")
             print(f"ИТОГО: {self.count_total_sum()}")
         days = self.count_days()
-        date = str(self.current_date.date())
+        date = str(f"{self.current_date.date()} 00:00:00")
+        print(date)
         print(f"Остаток на {days} дней: {self.data['total_income'] - self.count_total_sum()}")
         print(f"Можно тратить в день {round(self.data['daily_exp']['total_daily_exp'], 2)} рублей")
+        print(date)
         balance = self.data['daily_exp']['daily_exp_list'][date]['in_balance']
         exp = self.data['daily_exp']['daily_exp_list'][date]['exp_sum']
         today_limit = balance - exp
