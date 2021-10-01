@@ -44,6 +44,30 @@ class InputDevise:
         else:
             return 'no'
 
+    def date_interval(self, now):
+        try:
+            dates_list = self.information.split()
+            start_date = datetime.datetime.strptime(dates_list[0].replace('/', '.'), '%d.%m.%Y')
+            finish_date = datetime.datetime.strptime(dates_list[1].replace('/', '.'), '%d.%m.%Y')
+
+            if finish_date > start_date:
+                date_interval = [start_date, finish_date]
+                if start_date < now < finish_date:
+                    return date_interval
+                else:
+                    print('Текущая дата не входит в отчетный период.')
+                    return False
+            else:
+                print('Начальная дата больше конечной.')
+                return False
+
+
+
+
+        except ValueError:
+            print('Ошибка: неверный формат даты')
+            return False
+
 
 class Expenses:
     def __init__(self, information, current_date):
@@ -78,7 +102,6 @@ class Expenses:
             initialization()
             return True
         else:
-            print('Ответ НЕТ')
             global engine
             engine = False
 
@@ -260,19 +283,15 @@ def initialization():
     with open('data.json', 'r') as data_file:
         data = json.load(data_file)
         if data == "empty":
-
-            start_date = input('Введите дату начала отчетного периода ДД ММ ГГГГ: ')
-            start_date_err_msg = 'Ошибка: Неверный формат даты'
-            start_date_obj = InputDevise(start_date, start_date_err_msg)
-            start_date = start_date_obj.in_date()
-            if not start_date:
-                return
-            finish_date = input('Введите дату следующего поступления денег в формате ДД ММ ГГГГ: ')
-            finish_date_err_msg = 'Ошибка: Неверный формат даты'
-            finish_date_obj = InputDevise(finish_date, finish_date_err_msg)
-            finish_date = finish_date_obj.in_date()
-            if not finish_date:
+            reporting_period = InputDevise(
+                input('Введите начальную и конечную дату отчетного периода ДД ММ ГГГГ: '),
+                'Ошибка: Неверный формат даты'
+            )
+            start_and_finish_dates = reporting_period.date_interval(TODAY)
+            if not start_and_finish_dates:
                 return False
+            start_date = start_and_finish_dates[0]
+            finish_date = start_and_finish_dates[1]
 
             data = {
                 "total_income": 0,
