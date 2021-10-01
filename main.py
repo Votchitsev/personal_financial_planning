@@ -60,10 +60,6 @@ class InputDevise:
             else:
                 print('Начальная дата больше конечной.')
                 return False
-
-
-
-
         except ValueError:
             print('Ошибка: неверный формат даты')
             return False
@@ -273,9 +269,11 @@ class Interpreter:
                 return True
         except TypeError:
             print('TypeError: Неизвестная команда.')
+            help()
             return True
         except KeyError:
             print('KeyError: Неизвестная команда.')
+            help()
             return True
 
 
@@ -327,6 +325,12 @@ def initialization():
     with open('data.json', 'w', encoding='utf-8') as file:
         json.dump(data, file, indent=4)
     return data
+
+
+def help():
+    help_file = open('help.txt', 'r')
+    print(help_file.read())
+    help_file.close()
 
 
 if __name__ == "__main__":
