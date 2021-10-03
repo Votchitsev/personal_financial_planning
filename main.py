@@ -231,15 +231,15 @@ class Expenses:
 
     def show_daily_exp(self):
         daily_exp_list = self.data['daily_exp']['daily_exp_list']
-
+        current_date_without_time = f"{str(self.current_date)[0:10]} 00:00:00"
         for exp in daily_exp_list.items():
-            if exp[0] != str(self.current_date)[0:10]:
+            if exp[0] != current_date_without_time:
                 print(f"{exp[0]} израсходовано {exp[1]['exp_sum']} рублей.")
             else:
                 print(f"СЕГОДНЯ израсходовано {exp[1]['exp_sum']} рублей.")
                 break
-        current_in_balance = daily_exp_list[str(self.current_date)[0:10]]['in_balance']
-        current_exp = daily_exp_list[str(self.current_date)[0:10]]['exp_sum']
+        current_in_balance = daily_exp_list[current_date_without_time]['in_balance']
+        current_exp = daily_exp_list[current_date_without_time]['exp_sum']
         allow_sum = round((current_in_balance - current_exp), 2)
         print(f"Можно тратить {allow_sum} рублей")
 
