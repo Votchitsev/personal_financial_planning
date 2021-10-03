@@ -154,6 +154,9 @@ class Expenses:
         select = select_num.in_integer()
         if not select:
             return False
+        if select not in select_spend.keys():
+            print('Данной траты не существует')
+            return False
         remove_element = select_spend[select]
         self.data['constant_spending']['spending'].remove(remove_element)
         print('Трата удалена.')
@@ -196,7 +199,7 @@ class Expenses:
         exp_sum_error_msg = 'Ошибка: Неверное значение.'
         exp_sum_obj = InputDevise(exp_sum, exp_sum_error_msg)
         sum_ = exp_sum_obj.in_float()
-        self.data['daily_exp']['daily_exp_list'][date] = {
+        self.data['daily_exp']['daily_exp_list'][str(date)] = {
             'in_balance': balance,
             'exp_sum': sum_,
             'out_balance': balance - sum_}
@@ -208,12 +211,10 @@ class Expenses:
         exp_date_obj_error_msg = 'Ошибка: Неверный формат даты.'
         exp_date_obj = InputDevise(exp_date, exp_date_obj_error_msg)
         date = exp_date_obj.in_date()
-
-        del self.data['daily_exp']['daily_exp_list'][date]
+        self.data["daily_exp"]["daily_exp_list"][str(date)]['exp_sum'] = 0
         with open('data.json', 'w', encoding='utf-8') as del_exp_file:
             json.dump(self.data, del_exp_file, indent=4)
         print(f"Расход за {date} удален.")
-        return True
 
     def refresh(self):
         self.count_daily_exp()
@@ -269,11 +270,11 @@ class Interpreter:
                 return True
         except TypeError:
             print('TypeError: Неизвестная команда.')
-            help()
+            list_of_commands()
             return True
         except KeyError:
             print('KeyError: Неизвестная команда.')
-            help()
+            list_of_commands()
             return True
 
 
@@ -327,7 +328,7 @@ def initialization():
     return data
 
 
-def help():
+def list_of_commands():
     help_file = open('help.txt', 'r')
     print(help_file.read())
     help_file.close()
