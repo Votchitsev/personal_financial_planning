@@ -282,11 +282,14 @@ def initialization():
     with open('data.json', 'r') as data_file:
         data = json.load(data_file)
         if data == "empty":
-            reporting_period = InputDevise(
-                input('Введите начальную и конечную дату отчетного периода ДД ММ ГГГГ: '),
-                'Ошибка: Неверный формат даты'
-            )
-            start_and_finish_dates = reporting_period.date_interval(TODAY)
+            reporting_period = input('Введите начальную и конечную дату отчетного периода ДД ММ ГГГГ: ')
+            if reporting_period == 'exit':
+                global engine
+                engine = False
+                return False
+            reporting_period_obj = InputDevise(reporting_period, 'Ошибка: Неверный формат даты')
+
+            start_and_finish_dates = reporting_period_obj.date_interval(TODAY)
             if not start_and_finish_dates:
                 return False
             start_date = start_and_finish_dates[0]
