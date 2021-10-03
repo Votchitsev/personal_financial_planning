@@ -3,6 +3,8 @@ import json
 
 TODAY = datetime.datetime.today()
 
+engine = True
+
 
 class InputDevise:
     def __init__(self, input_information, error_message: str):
@@ -32,11 +34,7 @@ class InputDevise:
             return self.information
         try:
             format_date = self.information.replace('/', '.')
-            date_list = format_date.split('.')
-            day = int(date_list[0])
-            month = int(date_list[1])
-            year = int(date_list[2])
-            date = str(datetime.date(year, month, day))
+            date = datetime.datetime.strptime(format_date, '%d.%m.%Y')
             return date
         except ValueError:
             print('Ошибка: неверный формат даты')
@@ -48,6 +46,26 @@ class InputDevise:
         else:
             return 'no'
 
+    def date_interval(self, now):
+        try:
+            dates_list = self.information.split()
+            start_date = datetime.datetime.strptime(dates_list[0].replace('/', '.'), '%d.%m.%Y')
+            finish_date = datetime.datetime.strptime(dates_list[1].replace('/', '.'), '%d.%m.%Y')
+
+            if finish_date > start_date:
+                date_interval = [start_date, finish_date]
+                if start_date < now < finish_date:
+                    return date_interval
+                else:
+                    print('Текущая дата не входит в отчетный период.')
+                    return False
+            else:
+                print('Начальная дата больше конечной.')
+                return False
+        except ValueError:
+            print('Ошибка: неверный формат даты')
+            return False
+
 
 class Expenses:
     def __init__(self, information, current_date):
@@ -57,10 +75,9 @@ class Expenses:
         self.current_date = current_date
 
     def count_days(self):
-        start = datetime.datetime.strptime(self.data['start_date'], '%Y-%m-%d')
-        finish = datetime.datetime.strptime(self.data['next_income_date'], '%Y-%m-%d')
-        days_between = start - finish
-        days_between_int = int(str(days_between).split()[0])
+        days_between = datetime.datetime.strptime(self.data['start_date'], '%Y-%m-%d %H:%M:%S') - \
+                       datetime.datetime.strptime(self.data['next_income_date'], '%Y-%m-%d %H:%M:%S')
+        days_between_int = int(str(abs(days_between)).split()[0])
         return days_between_int + 1
 
     def reset(self):
@@ -83,7 +100,8 @@ class Expenses:
             initialization()
             return True
         else:
-            return False
+            global engine
+            engine = False
 
     def show(self):
         print(f"Текущая дата: {self.current_date}")
@@ -96,9 +114,11 @@ class Expenses:
                 print(f"{spend['category']} {spend['spend_of_money']}")
             print(f"ИТОГО: {self.count_total_sum()}")
         days = self.count_days()
-        date = str(self.current_date.date())
+        date = str(f"{self.current_date.date()} 00:00:00")
+        print(date)
         print(f"Остаток на {days} дней: {self.data['total_income'] - self.count_total_sum()}")
         print(f"Можно тратить в день {round(self.data['daily_exp']['total_daily_exp'], 2)} рублей")
+        print(date)
         balance = self.data['daily_exp']['daily_exp_list'][date]['in_balance']
         exp = self.data['daily_exp']['daily_exp_list'][date]['exp_sum']
         today_limit = balance - exp
@@ -135,6 +155,9 @@ class Expenses:
         select_num = InputDevise(input('Введите номер: '), err_msg)
         select = select_num.in_integer()
         if not select:
+            return False
+        if select not in select_spend.keys():
+            print('Данной траты не существует')
             return False
         remove_element = select_spend[select]
         self.data['constant_spending']['spending'].remove(remove_element)
@@ -178,7 +201,7 @@ class Expenses:
         exp_sum_error_msg = 'Ошибка: Неверное значение.'
         exp_sum_obj = InputDevise(exp_sum, exp_sum_error_msg)
         sum_ = exp_sum_obj.in_float()
-        self.data['daily_exp']['daily_exp_list'][date] = {
+        self.data['daily_exp']['daily_exp_list'][str(date)] = {
             'in_balance': balance,
             'exp_sum': sum_,
             'out_balance': balance - sum_}
@@ -190,12 +213,10 @@ class Expenses:
         exp_date_obj_error_msg = 'Ошибка: Неверный формат даты.'
         exp_date_obj = InputDevise(exp_date, exp_date_obj_error_msg)
         date = exp_date_obj.in_date()
-
-        del self.data['daily_exp']['daily_exp_list'][date]
+        self.data["daily_exp"]["daily_exp_list"][str(date)]['exp_sum'] = 0
         with open('data.json', 'w', encoding='utf-8') as del_exp_file:
             json.dump(self.data, del_exp_file, indent=4)
         print(f"Расход за {date} удален.")
-        return True
 
     def refresh(self):
         self.count_daily_exp()
@@ -212,14 +233,15 @@ class Expenses:
 
     def show_daily_exp(self):
         daily_exp_list = self.data['daily_exp']['daily_exp_list']
+        current_date_without_time = f"{str(self.current_date)[0:10]} 00:00:00"
         for exp in daily_exp_list.items():
-            if exp[0] != str(self.current_date)[0:10]:
+            if exp[0] != current_date_without_time:
                 print(f"{exp[0]} израсходовано {exp[1]['exp_sum']} рублей.")
             else:
                 print(f"СЕГОДНЯ израсходовано {exp[1]['exp_sum']} рублей.")
                 break
-        current_in_balance = daily_exp_list[str(self.current_date)[0:10]]['in_balance']
-        current_exp = daily_exp_list[str(self.current_date)[0:10]]['exp_sum']
+        current_in_balance = daily_exp_list[current_date_without_time]['in_balance']
+        current_exp = daily_exp_list[current_date_without_time]['exp_sum']
         allow_sum = round((current_in_balance - current_exp), 2)
         print(f"Можно тратить {allow_sum} рублей")
 
@@ -245,11 +267,16 @@ class Interpreter:
                 val_1 = command[1]
                 val_2 = command[2]
                 return self.first_value_of_command[command[0]](val_1, val_2)
+            else:
+                print('Неизвестная команда.')
+                return True
         except TypeError:
             print('TypeError: Неизвестная команда.')
+            list_of_commands()
             return True
         except KeyError:
             print('KeyError: Неизвестная команда.')
+            list_of_commands()
             return True
 
 
@@ -257,25 +284,23 @@ def initialization():
     with open('data.json', 'r') as data_file:
         data = json.load(data_file)
         if data == "empty":
-            date_zero = input('Введите дату начала отчетного периода ДД ММ ГГГГ: ')
-            date_zero_err_msg = 'Ошибка: Неверный формат даты'
-            date_zero_obj = InputDevise(date_zero, date_zero_err_msg)
-            zero_date = date_zero_obj.in_date()
-            if not zero_date:
+            reporting_period = input('Введите начальную и конечную дату отчетного периода ДД ММ ГГГГ: ')
+            if reporting_period == 'exit':
+                global engine
+                engine = False
                 return False
-            elif zero_date == 'exit':
-                return 'exit'
-            date_one = input('Введите дату следующего поступления денег в формате ДД ММ ГГГГ: ')
-            date_one_err_msg = 'Ошибка: Неверный формат даты'
-            date_one_obj = InputDevise(date_one, date_one_err_msg)
-            next_income_date = date_one_obj.in_date()
-            if not next_income_date:
+            reporting_period_obj = InputDevise(reporting_period, 'Ошибка: Неверный формат даты')
+
+            start_and_finish_dates = reporting_period_obj.date_interval(TODAY)
+            if not start_and_finish_dates:
                 return False
+            start_date = start_and_finish_dates[0]
+            finish_date = start_and_finish_dates[1]
 
             data = {
                 "total_income": 0,
-                "start_date": zero_date,
-                "next_income_date": next_income_date,
+                "start_date": str(start_date),
+                "next_income_date": str(finish_date),
                 "constant_spending": {
                     "spending": [],
                     "total_const_spend": 0
@@ -286,41 +311,12 @@ def initialization():
                 }
             }
 
-            def count_days(inf):
-                start = datetime.datetime.strptime(inf['next_income_date'], '%Y-%m-%d')
-                finish = datetime.datetime.strptime(inf['start_date'], '%Y-%m-%d')
-                days_between = start - finish
-                days_between_int = int(str(days_between).split()[0])
-                if days_between_int <= 0:
-                    print('Ошибка. Начальная дата больше конечной.')
-                    return False
-                else:
-                    return days_between_int + 1
-
-            def check_today(current_date, inf):
-                if current_date > datetime.datetime.strptime(inf['start_date'], '%Y-%m-%d'):
-                    print('Ошибка. Текущая дата больше даты окончания отчетного периода.')
-                    return False
-                else:
-                    return True
-
-            if not count_days(data):
-                return False
-            elif not check_today(TODAY, data):
-                return False
-            else:
-                date_list = [f"{data['start_date'][0:7]}-{int(data['start_date'][8:]) + i}" for i in
-                             range(count_days(data) + 1)]
-
-            date_list_format = []
-            for i in date_list:
-                if len(i) == 9:
-                    i = f"{i[0:8]}{0}{i[8]}"
-                    date_list_format.append(i)
-                else:
-                    date_list_format.append(i)
-            date_dict = {x: {'in_balance': 0, 'exp_sum': 0, 'out_balance': 0} for x in date_list_format}
-            data['daily_exp']['daily_exp_list'] = date_dict
+            daily_list = {}
+            date = start_date
+            while date <= finish_date:
+                daily_list[str(date)] = {'in_balance': 0, 'exp_sum': 0, 'out_balance': 0}
+                date += datetime.timedelta(days=1)
+                data["daily_exp"]["daily_exp_list"] = daily_list
         else:
             pass
         if data['total_income'] == 0:
@@ -337,9 +333,17 @@ def initialization():
     return data
 
 
+def list_of_commands():
+    help_file = open('help.txt', 'r')
+    print(help_file.read())
+    help_file.close()
+
+
 if __name__ == "__main__":
-    while True:
+    while engine:
         init_info = initialization()
+        if not init_info:
+            continue
         expenses = Expenses(init_info, TODAY)
         inter = Interpreter()
         sel = inter.select_command()
